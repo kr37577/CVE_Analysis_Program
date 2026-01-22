@@ -21,7 +21,7 @@
 
 	python count_cve.py --mode year --year-policy dateUpdated --csv --out published_by_year_dateUpdated.csv
 
-どうしても年が必要で、CVE-IDの年を使う場合（※「採番年」寄り）
+どうしても年が必要で、CVE-IDの年を使う場合
 
 	python count_cve.py --mode year --year-policy cveId --csv --out published_by_year_cveId.csv
 

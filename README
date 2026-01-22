@@ -1,0 +1,79 @@
+このフォルダは、CVEProject/cvelistV5 の CVE JSON（cvelistV5/cves 配下）を対象に、
+年別の公開件数や CVSS 深刻度分布を集計・可視化するためのスクリプト群です。
+
+
+前提
+- 母集団: cvelistV5 を clone して、このディレクトリ配下に cvelistV5/cves を置く
+	- 例: git clone https://github.com/CVEProject/cvelistV5.git
+- 「公開済み」定義: cveMetadata.state == "PUBLISHED" を対象（REJECTED 等は除外）
+- 公開年の定義（推奨）: cveMetadata.datePublished の年
+	- 欠損時の扱いは year-policy で明示（exclude/dateUpdated/cveId）
+
+
+1) 年ごとの公開CVE数を集計（CSV出力）
+スクリプト: count_cve.py
+
+推奨（研究向き: datePublished 欠損は除外し欠損数もstderrで報告）
+
+	python count_cve.py --mode year --year-policy exclude --csv --out published_by_year.csv
+
+欠損を dateUpdated で補完したい場合（※「公開年」ではなくなるので注意）
+
+	python count_cve.py --mode year --year-policy dateUpdated --csv --out published_by_year_dateUpdated.csv
+
+どうしても年が必要で、CVE-IDの年を使う場合（※「採番年」寄り）
+
+	python count_cve.py --mode year --year-policy cveId --csv --out published_by_year_cveId.csv
+
+補足: 大規模データで速くしたい場合
+	--workers で並列数を指定できます（0=自動, 1=無効）
+
+	python count_cve.py --mode batch --csv --out batch_counts.csv --workers 0
+
+
+2) 年ごとのCVSS深刻度分布を集計（CSV出力）
+スクリプト: count_cvss_by_year.py
+
+集計定義（スライドに書ける形）
+- cvelistV5 の CVE Record（state=PUBLISHED）を対象
+- containers.cna.metrics[].cvssV3_1.baseScore を第一候補として抽出
+	- 無い場合は containers.cna.metrics[].cvssV3_0.baseScore
+	- 同一CVE内に複数ある場合は baseScore の最大値を代表値として採用
+- 深刻度分類（CVSS v3.x レンジ）
+	- Critical: 9.0–10.0
+	- High: 7.0–8.9
+	- Medium: 4.0–6.9
+	- Low: 0.1–3.9
+	- None: 0.0
+
+推奨（公開年は datePublished、欠損は除外）
+
+	python count_cvss_by_year.py --year-policy exclude --out cvss_severity_by_year.csv
+
+出力CSV列
+- year
+- published_total: state=PUBLISHED かつ公開年が取れた件数
+- scored_total: そのうち baseScore が取れた件数
+- missing_cvss: 公開年は取れたが baseScore が取れない件数
+- critical/high/medium/low/none: scored_total の内訳
+
+補足
+- 本スクリプトは「CNAコンテナのみ」を対象（説明を簡潔にするため）
+- ADP等の他コンテナにしかCVSSが無い場合は missing_cvss になります
+- 大規模データ向けに --workers で並列実行できます（0=自動, 1=無効）
+
+	python count_cvss_by_year.py --year-policy exclude --out cvss_severity_by_year.csv --workers 0
+
+
+3) 年別公開数CSVを棒グラフにする
+スクリプト: plot_cve_by_year.py
+
+入力CSVは year,count の2列を想定（例: published_by_year.csv や result.csv）
+デフォルトは 2015–2025 を描画し、2025年だけオレンジ色、棒の上に数値も表示します。
+
+	python plot_cve_by_year.py --csv result.csv --min-year 2015 --max-year 2025 --out cve_counts_by_year.png
+
+依存
+- matplotlib が必要です
+	- 例: python -m pip install matplotlib
+

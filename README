@@ -77,3 +77,25 @@
 - matplotlib が必要です
 	- 例: python -m pip install matplotlib
 
+
+4) 年ごとのCVSS深刻度分布CSVを棒グラフにする（積み上げ）
+スクリプト: plot_cvss_severity_by_year.py
+
+入力CSVは count_cvss_by_year.py の出力（cvss_severity_by_year.csv）を想定します。
+デフォルトは 2016年以降を対象に、当年（例: 2026年）を除外して描画します（当年は集計途中になりやすいため）。
+また、missing_cvss（CVSSが取れなかった件数）もデフォルトで積み上げに含めます。
+
+	python plot_cvss_severity_by_year.py --csv cvss_severity_by_year.csv --min-year 2016 --out cvss_severity_by_year.png
+
+missing_cvss を除外したい場合
+
+	python plot_cvss_severity_by_year.py --csv cvss_severity_by_year.csv --min-year 2016 --exclude-missing --out cvss_severity_by_year_no_missing.png
+
+当年も含めたい場合（例: 2026年まで表示）
+
+	python plot_cvss_severity_by_year.py --csv cvss_severity_by_year.csv --min-year 2016 --max-year 2026 --out cvss_severity_by_year_through_2026.png
+
+割合（%）で見たい場合（※分母は scored_total、missing_cvss を含める場合は published_total）
+
+	python plot_cvss_severity_by_year.py --csv cvss_severity_by_year.csv --min-year 2016 --normalize --out cvss_severity_by_year_pct.png
+
